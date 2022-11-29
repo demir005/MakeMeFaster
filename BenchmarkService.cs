@@ -21,10 +21,10 @@ namespace MakeMeFaster
 
         //private class Config : ManualConfig
         //{
-        //    public Config()
-        //    {
-        //        SummaryStyle = BenchmarkDotNet.Reports.SummaryStyle.Default.WithRatioStyle(RatioStyle.Trend);
-        //    }
+        //public Config()
+        //{
+        //    SummaryStyle = BenchmarkDotNet.Reports.SummaryStyle.Default.WithRatioStyle(RatioStyle.Trend);
+        //}
         //}
 
         /// <summary>
@@ -104,8 +104,66 @@ namespace MakeMeFaster
         {
             // Include your optimization below, with comments explaining your thought process
 
-            List<AuthorDTO> authors = new List<AuthorDTO>();
+            /*
+              1. The first think which I see here is that we use .ToList() which will return all records from database
+                  I will remove all .ToList()
 
+              2. I moved OrderBy  in WHere statment to limited the number of authors returns
+
+              3. Moving Published.Years to .Select() statment because we alredy fetch the actors, books
+                 and we can move the part from belowe to .AllBooks part
+
+              4. If we pay attention, we can see that our query returns a lot of necessary information
+                 such as UserCreated = User.Created,UserEmailConfirmed etc...So I will be remove all
+                of necessary field
+
+              5. Same for the book, we only need Name and Published
+
+              6. I removed Include() and .ThenInclude() from query because we don't need it and it doesn't do
+                 anything usefull for this query and query can execute fine without them.
+                 We will not increase performance but we can make our query more readable.
+
+              7. I move .OrderByDescending(x => x.BooksCount) in the top of query
+                 and remove BookCount() because we don't need it and it will give at least a slighty perormance
+             
+             8. I moved .Where() clause to top of the query
+
+             9. I used the feature which was implemented in EF CORE 5.0 (Filter Include) 
+                and I will move the part from belowe query which is Publish.Year < 1900 and 
+                implement in Filter Include.
+
+            10. I didn't implement but It is good advice to implement index in Published.Year,Country and Age 
+                column in db and we can get better performance as well.
+             
+             */
+
+            using var dbContext = new AppDbContext();
+
+            var authors = dbContext.Authors
+                                   .Include(x => x.Books.Where(b => b.Published.Year < 1900))
+                                   .OrderByDescending(x => x.BooksCount)
+                                   .Where(x =>
+                                          x.Country == "Serbia" &&
+                                          x.Age == 27)
+                                   .Select(x => new AuthorDTO
+                                   {
+                                       UserFirstName = x.User.FirstName,
+                                       UserLastName = x.User.LastName,
+                                       UserEmail = x.User.Email,
+                                       UserName = x.User.UserName,
+                                       AllBooks = x.Books
+                                       .Select(y => new BookDto
+                                       {
+                                           Id = y.Id,
+                                           Name = y.Name,
+                                           Published = y.Published,
+                                       }).ToList(),
+                                       AuthorAge = x.Age,
+                                       AuthorCountry = x.Country,
+                                       Id = x.Id
+                                   })
+                                        .Take(2)
+                                        .ToList();
             return authors;
         }
     }

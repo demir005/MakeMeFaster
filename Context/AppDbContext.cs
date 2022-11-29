@@ -9,7 +9,8 @@ namespace MakeMeFaster.Context
     {
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
-            options.UseSqlServer("Server=SAMER\\SQLEXPRESS;Encrypt=False;Database=MakeMeFaster;Trusted_Connection=True;Integrated Security=true;MultipleActiveResultSets=true");
+            options.UseSqlServer("Server=localhost;Encrypt=False;Database=MakeMeFaster;Trusted_Connection=True;Integrated Security=true;MultipleActiveResultSets=true");
+            //options.UseSqlServer("Server=SAMER\\SQLEXPRESS;Encrypt=False;Database=MakeMeFaster;Trusted_Connection=True;Integrated Security=true;MultipleActiveResultSets=true");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
